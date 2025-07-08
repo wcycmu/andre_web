@@ -176,7 +176,7 @@ const initIndexPage = () => {
 
         } catch (error) {
             messageArea.textContent = `Error: ${error.message}`;
-            messageArea.classList.add('text-red-400');
+            messageArea.className = 'mt-4 text-center text-red-400';
         } finally {
             submitButton.disabled = false;
             buttonText.classList.remove('hidden');
@@ -229,36 +229,48 @@ const initDashboardPage = () => {
 };
 
 /**
- * Initializes the "What's Up" page.
+ * Initializes the "What's Up" page (Chatbot).
  */
 const initWhatsupPage = () => {
     checkAuth();
     renderHeaderAndNav('whatsup');
 
-    const form = document.getElementById('sentiment-form');
-    const sentimentInput = document.getElementById('sentiment-input');
-    const messageArea = document.getElementById('message-area');
-    const sentimentBtns = document.querySelectorAll('.sentiment-btn');
+    const chatWindow = document.getElementById('chat-window');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const typingIndicator = document.getElementById('typing-indicator');
 
-    sentimentBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            sentimentBtns.forEach(b => b.classList.remove('selected', 'bg-indigo-600'));
-            btn.classList.add('selected', 'bg-indigo-600');
-            sentimentInput.value = btn.dataset.sentiment;
-        });
-    });
+    const addMessage = (text, sender) => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message', sender);
+        messageElement.textContent = text;
+        chatWindow.appendChild(messageElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    };
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!sentimentInput.value) {
-            messageArea.textContent = 'Please select your sentiment.';
-            messageArea.className = 'mt-4 text-center text-yellow-400';
-            return;
+    const setTyping = (isTyping) => {
+        typingIndicator.style.display = isTyping ? 'flex' : 'none';
+        if (isTyping) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
+    };
+    
+    addMessage("Hello! How are you feeling about the stock market today?", 'bot');
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userInput = chatInput.value.trim();
+        if (!userInput) return;
+
+        addMessage(userInput, 'user');
+        chatInput.value = '';
+        setTyping(true);
+
+        localStorage.setItem('sentiment', userInput);
 
         const payload = {
             user_id: getUserId(),
-            sentiment: sentimentInput.value,
+            sentiment: userInput,
         };
 
         try {
@@ -268,16 +280,15 @@ const initWhatsupPage = () => {
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error('Failed to save sentiment.');
-
+            if (!response.ok) throw new Error('Failed to get a response from Andre.');
+            
             const data = await response.json();
-            localStorage.setItem('sentiment', data.sentiment);
-            messageArea.textContent = `Success! Your sentiment "${data.sentiment}" has been saved.`;
-            messageArea.className = 'mt-4 text-center text-green-400';
+            addMessage(data.sentiment, 'bot');
 
         } catch (error) {
-            messageArea.textContent = `Error: ${error.message}`;
-            messageArea.className = 'mt-4 text-center text-red-400';
+            addMessage(`Sorry, I had trouble connecting. ${error.message}`, 'bot');
+        } finally {
+            setTyping(false);
         }
     });
 };
@@ -294,64 +305,29 @@ const initMarketPage = () => {
     const dataContainer = document.getElementById('market-data-container');
     const stockContainer = document.getElementById('stock-cards-container');
     const newsContainer = document.getElementById('news-list-container');
-    
-    const transactions = JSON.parse(localStorage.getItem('transactions'));
-    const tickers = [...new Set(transactions.map(tx => tx.ticker))];
-
-    if (tickers.length === 0) {
-        loader.classList.add('hidden');
-        errorMsg.textContent = "No tickers found in your transactions.";
-        errorMsg.classList.remove('hidden');
-        return;
-    }
-
-    const tickerString = tickers.join(',');
-
-    const fetchData = async () => {
-        try {
-            const [stockRes, newsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/get-stock-data?tickers=${tickerString}`),
-                fetch(`${API_BASE_URL}/get-news?tickers=${tickerString}`)
-            ]);
-
-            if (!stockRes.ok || !newsRes.ok) throw new Error('Failed to fetch market data.');
-
-            const stockData = await stockRes.json();
-            const newsData = await newsRes.json();
-            
-            renderStockData(stockData.data || []);
-            renderNewsData(newsData.headlines || []);
-            
-            dataContainer.classList.remove('hidden');
-
-        } catch (error) {
-            errorMsg.textContent = `Error: ${error.message}`;
-            errorMsg.classList.remove('hidden');
-        } finally {
-            loader.classList.add('hidden');
-        }
-    };
+    const tickerForm = document.getElementById('ticker-form');
+    const tickerInput = document.getElementById('ticker-input');
 
     const renderStockData = (stocks) => {
-        if(stocks.length === 0) {
-             stockContainer.innerHTML = `<p class="text-gray-400 col-span-full">Could not retrieve stock data.</p>`;
-             return;
+        if (!stocks || stocks.length === 0) {
+            stockContainer.innerHTML = `<p class="text-gray-400 col-span-full">Could not retrieve stock data for the given tickers.</p>`;
+            return;
         }
         stockContainer.innerHTML = stocks.map(stock => `
             <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
                 <h4 class="text-xl font-bold text-white">${stock.ticker}</h4>
                 <div class="mt-2 space-y-1 text-sm">
-                    <p class="text-gray-300">P/E Ratio: <span class="font-semibold text-white">${stock.pe_ratio.toFixed(2)}</span></p>
-                    <p class="text-gray-300">EPS: <span class="font-semibold text-white">${stock.eps.toFixed(2)}</span></p>
+                    <p class="text-gray-300">P/E Ratio: <span class="font-semibold text-white">${stock.pe_ratio != null ? stock.pe_ratio.toFixed(2) : 'N/A'}</span></p>
+                    <p class="text-gray-300">EPS: <span class="font-semibold text-white">${stock.eps != null ? stock.eps.toFixed(2) : 'N/A'}</span></p>
                 </div>
             </div>
         `).join('');
     };
 
     const renderNewsData = (news) => {
-        if(news.length === 0) {
-             newsContainer.innerHTML = `<p class="text-gray-400">No recent news found for your tickers.</p>`;
-             return;
+        if (!news || news.length === 0) {
+            newsContainer.innerHTML = `<p class="text-gray-400">No recent news found for the given tickers.</p>`;
+            return;
         }
         newsContainer.innerHTML = news.map(item => `
             <div class="border-b border-gray-700 py-3">
@@ -363,8 +339,62 @@ const initMarketPage = () => {
         `).join('');
     };
 
-    fetchData();
+    const fetchMarketData = async (tickerString) => {
+        if (!tickerString || tickerString.trim() === '') {
+            errorMsg.textContent = "Please enter at least one ticker symbol.";
+            errorMsg.classList.remove('hidden');
+            dataContainer.classList.add('hidden');
+            loader.classList.add('hidden');
+            return;
+        }
+
+        loader.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        dataContainer.classList.add('hidden');
+        stockContainer.innerHTML = '';
+        newsContainer.innerHTML = '';
+
+        try {
+            const [stockRes, newsRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/get-stock-data?tickers=${tickerString}`),
+                fetch(`${API_BASE_URL}/get-news?tickers=${tickerString}`)
+            ]);
+
+            if (!stockRes.ok || !newsRes.ok) throw new Error('Failed to fetch market data.');
+
+            const stockData = await stockRes.json();
+            const newsData = await newsRes.json();
+            
+            renderStockData(stockData.data);
+            renderNewsData(newsData.headlines);
+            
+            dataContainer.classList.remove('hidden');
+        } catch (error) {
+            errorMsg.textContent = `Error: ${error.message}`;
+            errorMsg.classList.remove('hidden');
+        } finally {
+            loader.classList.add('hidden');
+        }
+    };
+
+    tickerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const tickers = tickerInput.value.trim();
+        fetchMarketData(tickers);
+    });
+
+    const transactions = JSON.parse(localStorage.getItem('transactions'));
+    if (transactions && transactions.length > 0) {
+        const initialTickers = [...new Set(transactions.map(tx => tx.ticker))].join(',');
+        tickerInput.value = initialTickers;
+        fetchMarketData(initialTickers);
+    } else {
+        loader.classList.add('hidden');
+        errorMsg.textContent = "No tickers found in your portfolio. Enter tickers above to get started.";
+        errorMsg.classList.remove('hidden');
+    }
 };
+
 
 /**
  * Initializes the analysis page.
@@ -376,77 +406,12 @@ const initAnalyzePage = () => {
     const analyzeBtn = document.getElementById('analyze-button');
     const loader = document.getElementById('loader');
     const errorMsg = document.getElementById('error-msg');
-    const prereqMsg = document.getElementById('prerequisite-msg');
     const recommendationsContainer = document.getElementById('recommendations-container');
-    
-    const sentiment = localStorage.getItem('sentiment');
-    if (!sentiment) {
-        prereqMsg.innerHTML = `Please provide your sentiment on the <a href="whatsup.html" class="font-bold underline hover:text-yellow-300">'What's Up'</a> page before running an analysis.`;
-        prereqMsg.classList.remove('hidden');
-        analyzeBtn.disabled = true;
-    }
-
-    analyzeBtn.addEventListener('click', async () => {
-        analyzeBtn.disabled = true;
-        loader.classList.remove('hidden');
-        errorMsg.classList.add('hidden');
-        recommendationsContainer.innerHTML = '';
-
-        try {
-            const transactions = JSON.parse(localStorage.getItem('transactions'));
-            const tickers = [...new Set(transactions.map(tx => tx.ticker))].join(',');
-
-            // 1. Fetch required data (metrics, news)
-            const [stockRes, newsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/get-stock-data?tickers=${tickers}`),
-                fetch(`${API_BASE_URL}/get-news?tickers=${tickers}`)
-            ]);
-            if (!stockRes.ok || !newsRes.ok) throw new Error('Could not fetch market data needed for analysis.');
-
-            const stockData = await stockRes.json();
-            const newsData = await newsRes.json();
-
-            // 2. Prepare payload for /analyze
-            const payload = {
-                user_id: getUserId(),
-                sentiment: localStorage.getItem('sentiment'),
-                transaction_history: transactions.map(tx => ({
-                    ticker: tx.ticker,
-                    transaction_date: tx.buy_date, // Mapping buy_date to transaction_date
-                    transaction_type: 'buy', // Assuming 'buy' as per MVP requirements
-                    quantity: tx.quantity,
-                    price: tx.price
-                })),
-                current_metrics: stockData.data,
-                news_summaries: newsData.headlines.map(h => ({ ticker: h.ticker, headline: h.title })) // API expects this format
-            };
-
-            // 3. Call /analyze endpoint
-            const analyzeRes = await fetch(`${API_BASE_URL}/analyze`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!analyzeRes.ok) throw new Error('Analysis request failed.');
-
-            const analysisResult = await analyzeRes.json();
-            
-            // 4. Render results
-            renderRecommendations(analysisResult.recommendations || []);
-
-        } catch (error) {
-            errorMsg.textContent = `Error: ${error.message}`;
-            errorMsg.classList.remove('hidden');
-        } finally {
-            analyzeBtn.disabled = false;
-            loader.classList.add('hidden');
-        }
-    });
 
     const renderRecommendations = (recs) => {
-         if(recs.length === 0) {
-             recommendationsContainer.innerHTML = `<p class="text-gray-400 text-center">No specific recommendations could be generated at this time.</p>`;
-             return;
+        if (!recs || recs.length === 0) {
+            recommendationsContainer.innerHTML = `<p class="text-gray-400 text-center">No specific recommendations could be generated at this time.</p>`;
+            return;
         }
         recommendationsContainer.innerHTML = recs.map(rec => {
             const confidenceColor = rec.confidence.toLowerCase() === 'high' ? 'text-green-400' : (rec.confidence.toLowerCase() === 'medium' ? 'text-yellow-400' : 'text-gray-400');
@@ -464,13 +429,72 @@ const initAnalyzePage = () => {
             `;
         }).join('');
     };
+
+    analyzeBtn.addEventListener('click', async () => {
+        analyzeBtn.disabled = true;
+        loader.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        recommendationsContainer.innerHTML = '';
+
+        try {
+            const transactions = JSON.parse(localStorage.getItem('transactions'));
+            if (!transactions || transactions.length === 0) {
+                throw new Error("No transaction history found. Please upload your transactions first.");
+            }
+            const tickers = [...new Set(transactions.map(tx => tx.ticker))].join(',');
+
+            const [stockRes, newsRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/get-stock-data?tickers=${tickers}`),
+                fetch(`${API_BASE_URL}/get-news?tickers=${tickers}`)
+            ]);
+            if (!stockRes.ok || !newsRes.ok) throw new Error('Could not fetch market data needed for analysis.');
+
+            const stockData = await stockRes.json();
+            const newsData = await newsRes.json();
+
+            if (!stockData.data || !newsData.headlines) {
+                throw new Error("Received empty market data from the server. Cannot perform analysis.");
+            }
+
+            const payload = {
+                user_id: getUserId(),
+                sentiment: localStorage.getItem('sentiment'), // Can be null, that's okay
+                transaction_history: transactions.map(tx => ({
+                    ticker: tx.ticker,
+                    transaction_date: tx.buy_date,
+                    transaction_type: 'buy',
+                    quantity: tx.quantity,
+                    price: tx.price
+                })),
+                current_metrics: stockData.data,
+                news_summaries: newsData.headlines.map(h => ({ ticker: h.ticker || tickers.split(',')[0], headline: h.title }))
+            };
+
+            const analyzeRes = await fetch(`${API_BASE_URL}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!analyzeRes.ok) {
+                const errorData = await analyzeRes.json().catch(() => ({ message: 'Analysis request failed.' }));
+                throw new Error(errorData.message);
+            }
+
+            const analysisResult = await analyzeRes.json();
+            renderRecommendations(analysisResult.recommendations);
+        } catch (error) {
+            errorMsg.textContent = `Error: ${error.message}`;
+            errorMsg.classList.remove('hidden');
+        } finally {
+            analyzeBtn.disabled = false;
+            loader.classList.add('hidden');
+        }
+    });
 };
 
 
 // --- App Router ---
 document.addEventListener('DOMContentLoaded', () => {
-    // This new routing mechanism is more robust than parsing the URL.
-    // It relies on a unique ID on each page's <body> tag.
     const pageId = document.body.id;
     
     switch (pageId) {
@@ -490,8 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
             initAnalyzePage();
             break;
         default:
-            // This case should not be reached if all pages have a body ID.
-            // As a fallback, redirect to a safe page.
             console.error('Page has no ID or an unknown ID:', pageId);
             if (localStorage.getItem('transactions')) {
                 window.location.replace('dashboard.html');
