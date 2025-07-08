@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Portfolio - Andre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="page-analyze" class="bg-gray-900 text-gray-100">
+
+    <div id="app-container" class="min-h-screen">
+        <!-- Header and Nav will be injected here -->
+        <div id="header-nav-container"></div>
+
+        <main class="container mx-auto p-4 sm:p-6 lg:p-8 text-center">
+            <h2 class="text-3xl font-bold mb-6">Analyze My Portfolio</h2>
+            
+            <div class="max-w-3xl mx-auto bg-gray-800 p-8 rounded-lg shadow-xl">
+                <p class="text-gray-300 mb-6">Get AI-powered recommendations based on your transactions, sentiment, and current market data.</p>
+                
+                <div id="prerequisite-msg" class="text-yellow-400 p-3 bg-yellow-900/50 rounded-md mb-6 hidden"></div>
+
+                <button id="analyze-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 disabled:bg-gray-500">
+                    Run Analysis
+                </button>
+
+                <div id="loader" class="loader mx-auto my-8 hidden"></div>
+                <div id="error-msg" class="text-red-400 mt-4 hidden"></div>
+                
+                <div id="recommendations-container" class="mt-8 text-left space-y-4">
+                    <!-- Recommendation cards will be injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
