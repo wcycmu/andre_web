@@ -205,7 +205,8 @@ const initDashboardPage = () => {
         <thead class="bg-gray-700">
             <tr>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Ticker</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Buy Date</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Quantity</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
             </tr>
@@ -217,7 +218,8 @@ const initDashboardPage = () => {
             ${transactions.map(tx => `
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">${tx.ticker}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${tx.buy_date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${tx.transaction_date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${tx.transaction_type}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${tx.quantity}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$${Number(tx.price).toFixed(2)}</td>
                 </tr>
