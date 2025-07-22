@@ -166,8 +166,8 @@ const initIndexPage = () => {
 
             const data = await response.json();
             
-            if (data.status === 'success' && data.preview) {
-                localStorage.setItem('transactions', JSON.stringify(data.preview));
+            if (data.status === 'success' && data.transactions) {
+                localStorage.setItem('transactions', JSON.stringify(data.transactions));
                 getUserId(); // Ensure a user ID is created on first successful upload
                 window.location.replace('dashboard.html');
             } else {
