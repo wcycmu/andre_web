@@ -395,6 +395,7 @@ const initMarketPage = () => {
         errorMsg.textContent = "No tickers found in your portfolio. Enter tickers above to get started.";
         errorMsg.classList.remove('hidden');
     }
+    localStorage.setItem('current_metric_tickerString', tickerString);
 };
 
 
