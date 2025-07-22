@@ -473,6 +473,10 @@ const initAnalyzePage = () => {
                 news_summaries: newsData.headlines.map(h => ({ ticker: h.ticker || tickers.split(',')[0], headline: h.title }))
             };
 
+            console.log(payload);
+
+            console.log(JSON.stringify(payload, null, 2));
+
             const analyzeRes = await fetch(`${API_BASE_URL}/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
