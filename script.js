@@ -341,8 +341,6 @@ const initMarketPage = () => {
         `).join('');
     };
 
-    localStorage.setItem('current_metric_tickerString', tickerString);
-
     const fetchMarketData = async (tickerString) => {
         if (!tickerString || tickerString.trim() === '') {
             errorMsg.textContent = "Please enter at least one ticker symbol.";
