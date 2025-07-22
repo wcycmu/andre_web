@@ -444,7 +444,8 @@ const initAnalyzePage = () => {
             if (!transactions || transactions.length === 0) {
                 throw new Error("No transaction history found. Please upload your transactions first.");
             }
-            const tickers = localStorage.getItem('current_metric_tickerString') || '';
+            const tickers = [...new Set(transactions.map(tx => tx.ticker))].join(',');
+
             const [stockRes, newsRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/get-stock-data?tickers=${tickers}`),
                 fetch(`${API_BASE_URL}/get-news?tickers=${tickers}`)
