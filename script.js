@@ -463,8 +463,8 @@ const initAnalyzePage = () => {
                 sentiment: localStorage.getItem('sentiment'), // Can be null, that's okay
                 transaction_history: transactions.map(tx => ({
                     ticker: tx.ticker,
-                    transaction_date: tx.buy_date,
-                    transaction_type: 'buy',
+                    transaction_date: tx.transaction_date,
+                    transaction_type: tx.transaction_type,
                     quantity: tx.quantity,
                     price: tx.price
                 })),
