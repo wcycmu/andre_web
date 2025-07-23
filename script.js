@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'http://44.242.237.243:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 // --- COMMON FUNCTIONS ---
 
